@@ -1,0 +1,375 @@
+seml:
+  project_root_dir: ..
+  executable: ex_evasion.py
+  output_dir: ../ex-output
+
+slurm:
+  experiments_per_job: 1
+  sbatch_options:
+    partition: gpu_large
+    gres: gpu:1
+    mem: 64G
+    cpus-per-task: 8
+    time: 3-00:00
+
+
+fixed:
+  attack.scope: global
+grid:
+  dataset: { type: choice, options: [citeseer, cora] }
+
+
+gcn_1:
+  fixed:
+    model.arch: gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+  grid:
+    attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }
+
+  pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0 } }
+  greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [null, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100 } }] } } }
+
+
+gcn_2:
+  fixed:
+    model.arch: gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+    attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }
+
+  pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0 } }
+  greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [null, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100 } }] } } }
+
+
+jaccard_gcn_faith:
+  fixed:
+    model.arch: jaccard_gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    model.threshold: 0.0
+    training.lr: 0.01
+    training.patience: 200
+    training.weight_decay: 0.0005
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+    attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }
+    attack.loss.drop_layers: { type: choice, options: [[], [jaccard]] }
+
+  pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0 } }
+  greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [null, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100 } }] } } }
+
+
+jaccard_gcn_tuned:
+  fixed:
+    model.arch: jaccard_gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    model.threshold: 0.0
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+    attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }
+    attack.loss.drop_layers: { type: choice, options: [[], [jaccard]] }
+
+  pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0 } }
+  greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [null, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100 } }] } } }
+
+
+svd_gcn_faith:
+  fixed:
+    model.arch: svd_gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.patience: 200
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+    attack.loss.freeze_layers: [low_rank]
+  grid:
+    attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }
+
+  without_mask:
+    grid:
+      model.rank: { type: choice, options: [10, 50] }
+    pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1 } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [null, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100 } }] } } }
+  rank_10_with_mask:
+    fixed:
+      model.rank: 10
+      attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: survivor_avg, rank: 10 }
+    pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1 } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [null, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100 } }] } } }
+  rank_50_with_mask:
+    fixed:
+      model.rank: 50
+      attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: survivor_avg, rank: 50 }
+    pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1 } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [null, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100 } }] } } }
+
+
+svd_gcn_tuned:
+  fixed:
+    model.arch: svd_gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    training.lr: 0.01
+    training.weight_decay: 0.001
+    attack.loss.freeze_layers: [low_rank]
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+    attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }
+
+  without_mask:
+    grid:
+      model.rank: { type: choice, options: [10, 50] }
+    pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1 } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [null, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100 } }] } } }
+  rank_10_with_mask:
+    fixed:
+      model.rank: 10
+      attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: survivor_avg, rank: 10 }
+    pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1 } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [null, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100 } }] } } }
+  rank_50_with_mask:
+    fixed:
+      model.rank: 50
+      attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: survivor_avg, rank: 50 }
+    pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1 } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [null, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100 } }] } } }
+
+
+rgcn_faith:
+  fixed:
+    model.arch: rgcn
+    model.hidden_dims: [16]
+    model.dropout: 0.6
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+  grid:
+    attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }
+
+  pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0, attack.meta_adjustment: { model: { sqrt_eps: 0.01 }, training: { reg_kl: 0.0 } } } }
+  greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [{ model: { sqrt_eps: 0.01 }, training: { reg_kl: 0.0 } }, { model: { sqrt_eps: 0.01 }, training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100, reg_kl: 0.0 } }] } } }
+
+
+rgcn_tuned:
+  fixed:
+    model.arch: rgcn
+    model.hidden_dims: [32]
+    model.dropout: 0.6
+    training.lr: 0.01
+    training.weight_decay: 0.01
+  grid:
+    attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }
+
+  pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0, attack.meta_adjustment: { model: { sqrt_eps: 0.01 }, training: { reg_kl: 0.0 } } } }
+  greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [{ model: { sqrt_eps: 0.01 }, training: { reg_kl: 0.0 } }, { model: { sqrt_eps: 0.01 }, training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 100, reg_kl: 0.0 } }] } } }
+
+
+pro_gnn:
+  fixed:
+    model.arch: pro_gnn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.gnn_lr: 0.01
+    training.gnn_weight_decay: 0.0005
+    training.adj_lr: 0.01
+    training.adj_momentum: 0.9
+    training.reg_adj_deviate: 1.0
+
+  faith_citeseer:
+    fixed:
+      dataset: citeseer
+      training.reg_adj_l1: 0.0005
+      training.reg_adj_nuclear: 1.5
+      training.reg_feat_smooth: 0.0001
+    multi_pgd: { fixed: { attack.method: pgd_edges, attack.num_auxiliaries: 10, attack.auxiliary_adjustment.training.reg_adj_nuclear: 0.0, attack.repetitions: 10 }, grid: { attack.loss.aggregation: { type: choice, options: [masked_cross_entropy, tanh_score_margin, proba_margin] } } }
+    pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1, attack.meta_adjustment: { training: { max_epochs: 50, reg_adj_nuclear: 0.0 } } }, grid: { attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] } } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }, attack.meta_adjustment: { type: choice, options: [{ training: { max_epochs: 50, reg_adj_nuclear: 0.0 } }, { training: { optimizer: sgd, gnn_lr: 1.0, yield_best: False, patience: null, max_epochs: 50, reg_adj_nuclear: 0.0 } }] } } }
+  faith_cora:
+    fixed:
+      dataset: cora
+      training.reg_adj_l1: 0.0005
+      training.reg_adj_nuclear: 1.5
+      training.reg_feat_smooth: 0.001
+    multi_pgd: { fixed: { attack.method: pgd_edges, attack.num_auxiliaries: 10, attack.auxiliary_adjustment.training.reg_adj_nuclear: 0.0, attack.repetitions: 10 }, grid: { attack.loss.aggregation: { type: choice, options: [masked_cross_entropy, tanh_score_margin, proba_margin] } } }
+    pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1, attack.meta_adjustment: { training: { max_epochs: 50, reg_adj_nuclear: 0.0 } } }, grid: { attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] } } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }, attack.meta_adjustment: { type: choice, options: [{ training: { max_epochs: 50, reg_adj_nuclear: 0.0 } }, { training: { optimizer: sgd, gnn_lr: 1.0, yield_best: False, patience: null, max_epochs: 50, reg_adj_nuclear: 0.0 } }] } } }
+  # Get the init run IDs using:
+  # db.getCollection('evasion').find({"config.model.arch":"gcn","config.model.hidden_dims":[16],"config.attack.scope":"global","config.attack.method":"pgd_meta_edges","config.dataset":"XXX","config.attack.loss.aggregation":"XXX"})
+  tuned_citeseer:
+    fixed:
+      dataset: citeseer
+      training.reg_adj_l1: 0.2
+      training.reg_adj_nuclear: 20.0
+      training.reg_feat_smooth: 0.2
+    multi_pgd: { fixed: { attack.method: pgd_edges, attack.num_auxiliaries: 10, attack.auxiliary_adjustment.training.reg_adj_nuclear: 0.0, attack.repetitions: 10 }, grid: { attack.loss.aggregation: { type: choice, options: [masked_cross_entropy, tanh_score_margin, proba_margin] } } }
+    pgd_meta:
+      fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1, attack.meta_adjustment: { training: { max_epochs: 100, reg_adj_nuclear: 0.0 } } }
+      tanh_score_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+      proba_margin: { fixed: { attack.loss.aggregation: proba_margin, attack.init_from_run_id: TODO } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }, attack.meta_adjustment: { type: choice, options: [{ training: { max_epochs: 50, reg_adj_nuclear: 0.0 } }, { training: { optimizer: sgd, gnn_lr: 1.0, yield_best: False, patience: null, max_epochs: 50, reg_adj_nuclear: 0.0 } }] } } }
+  tuned_cora:
+    fixed:
+      dataset: cora
+      training.reg_adj_l1: 0.1
+      training.reg_adj_nuclear: 10.0
+      training.reg_feat_smooth: 0.1
+    multi_pgd: { fixed: { attack.method: pgd_edges, attack.num_auxiliaries: 10, attack.auxiliary_adjustment.training.reg_adj_nuclear: 0.0, attack.repetitions: 10 }, grid: { attack.loss.aggregation: { type: choice, options: [masked_cross_entropy, tanh_score_margin, proba_margin] } } }
+    pgd_meta:
+      fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1, attack.meta_adjustment: { training: { max_epochs: 100, reg_adj_nuclear: 0.0 } } }
+      tanh_score_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+      proba_margin: { fixed: { attack.loss.aggregation: proba_margin, attack.init_from_run_id: TODO } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }, attack.meta_adjustment: { type: choice, options: [{ training: { max_epochs: 50, reg_adj_nuclear: 0.0 } }, { training: { optimizer: sgd, gnn_lr: 1.0, yield_best: False, patience: null, max_epochs: 50, reg_adj_nuclear: 0.0 } }] } } }
+
+
+gnn_guard_faith:
+  fixed:
+    model.arch: gnn_guard
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    model.prune_edges: false
+    training.max_epochs: 81
+    training.patience: null
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+    attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }
+
+  paper:
+    fixed:
+      model.mimic_ref_impl: false
+    pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0, attack.meta_adjustment: { model: { div_limit: 0.01 }, training: { max_epochs: 50 } } } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [{ model: { div_limit: 0.01 }, training: { max_epochs: 50 } }, { model: { div_limit: 0.01 }, training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 50 } }] } } }
+  ref_impl:
+    fixed:
+      model.mimic_ref_impl: true
+    pgd_meta: { fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.1, attack.grad_clip: 0.1, attack.meta_adjustment: { model: { div_limit: 0.01 }, training: { max_epochs: 50 } } } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.meta_adjustment: { type: choice, options: [{ model: { div_limit: 0.01 }, training: { max_epochs: 50 } }, { model: { div_limit: 0.01 }, training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null, max_epochs: 50 } }] } } }
+
+
+grand_tuned_citeseer:
+  fixed:
+    dataset: citeseer
+    model.arch: grand
+    model.hidden_dims: [32]
+    model.dropout: 0.2
+    model.dropnode: 0.5
+    model.order: 2
+    model.mlp_input_dropout: 0.0
+    training.lr: 0.05
+    training.weight_decay: 0.0005
+    training.n_samples: 2
+    training.reg_consistency: 0.7
+    training.sharpening_temperature: 0.3
+    attack.steady_training_seed: true
+
+  limited_epochs:
+    fixed:
+      attack.meta_adjustment: { training: { max_epochs: 200, n_samples: 1 } }
+    pgd_meta:
+      fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0 }
+      # Get the init run IDs using:
+      # db.getCollection('evasion').find({"config.model.arch":"gcn","config.model.hidden_dims":[16],"config.attack.scope":"global","config.attack.method":"pgd_meta_edges","config.dataset":"citeseer","config.attack.loss.aggregation":"XXX"})
+      tanh_score_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+      proba_margin: { fixed: { attack.loss.aggregation: proba_margin, attack.init_from_run_id: TODO } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }, attack.meta_adjustment: { type: choice, options: [{ }, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null } }] } } }
+  unlimited_epochs:
+    fixed:
+      attack.meta_adjustment: { training: { n_samples: 1 } }
+    pgd_meta:
+      fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0 }
+      # Get the init run IDs using:
+      # db.getCollection('evasion').find({"config.model.arch":"pro_gnn","config.training.reg_adj_nuclear":{"$gte":10},"config.attack.scope":"global","config.attack.method":"pgd_meta_edges","config.dataset":"citeseer","config.attack.loss.aggregation":"XXX"})
+      tanh_score_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+      proba_margin: { fixed: { attack.loss.aggregation: proba_margin, attack.init_from_run_id: TODO } }
+
+
+grand_tuned_cora:
+  fixed:
+    dataset: cora
+    model.arch: grand
+    model.hidden_dims: [32]
+    model.dropout: 0.5
+    model.dropnode: 0.5
+    model.order: 8
+    model.mlp_input_dropout: 0.5
+    training.lr: 0.05
+    training.weight_decay: 0.0001
+    training.n_samples: 4
+    training.reg_consistency: 1.0
+    training.sharpening_temperature: 0.5
+    attack.steady_training_seed: true
+
+  limited_epochs:
+    fixed:
+      attack.meta_adjustment: { training: { max_epochs: 200, n_samples: 1 } }
+    pgd_meta:
+      fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0 }
+      # Get the init run IDs using:
+      # db.getCollection('evasion').find({"config.model.arch":"gcn","config.model.hidden_dims":[16],"config.attack.scope":"global","config.attack.method":"pgd_meta_edges","config.dataset":"cora","config.attack.loss.aggregation":"XXX"})
+      tanh_score_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+      proba_margin: { fixed: { attack.loss.aggregation: proba_margin, attack.init_from_run_id: TODO } }
+    greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }, attack.meta_adjustment: { type: choice, options: [{ }, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null } }] } } }
+  unlimited_epochs:
+    fixed:
+      attack.meta_adjustment: { training: { n_samples: 1 } }
+    pgd_meta:
+      fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.01, attack.grad_clip: 1.0 }
+      # Get the init run IDs using:
+      # db.getCollection('evasion').find({"config.model.arch":"pro_gnn","config.training.reg_adj_nuclear":{"$gte":10},"config.attack.scope":"global","config.attack.method":"pgd_meta_edges","config.dataset":"cora","config.attack.loss.aggregation":"XXX"})
+      tanh_score_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+      proba_margin: { fixed: { attack.loss.aggregation: proba_margin, attack.init_from_run_id: TODO } }
+
+
+soft_median_gdc_faith_tuned_citeseer:
+  fixed:
+    dataset: citeseer
+    model.arch: soft_median_gdc
+    model.hidden_dims: [64]
+    model.dropout: 0.5
+    model.neighbors: 64
+    model.temperature: 0.5
+    training.lr: 0.01
+    training.weight_decay: 0.001
+    attack.meta_adjustment: { model: { only_weight_neighbors: false }, training: { max_epochs: 50 } }
+  grid:
+    model.teleport_proba: { type: choice, options: [0.15, 0.25] }  # faith & tuned
+
+  greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }, attack.meta_adjustment: { type: choice, options: [{ }, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null } }] } } }
+  pgd_meta:
+    fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.3, attack.grad_clip: 0.1 }
+    # Get the init run IDs using:
+    # db.getCollection('evasion').find({"config.model.arch":"pro_gnn","config.training.reg_adj_nuclear":{"$gte":10},"config.attack.scope":"global","config.attack.method":"pgd_meta_edges","config.dataset":"XXX","config.attack.loss.aggregation":"XXX"})
+    init_citeseer_tanh_score_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+    init_citeseer_proba_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+
+
+soft_median_gdc_faith_cora:
+  fixed:
+    dataset: cora
+    model.arch: soft_median_gdc
+    model.hidden_dims: [64]
+    model.dropout: 0.5
+    model.neighbors: 64
+    model.teleport_proba: 0.15
+    model.temperature: 0.5
+    training.lr: 0.01
+    training.weight_decay: 0.001
+    attack.meta_adjustment: { model: { only_weight_neighbors: false }, training: { max_epochs: 50 } }
+
+  greedy_meta: { fixed: { attack.method: greedy_meta_edges }, grid: { attack.loss.aggregation: { type: choice, options: [tanh_score_margin, proba_margin] }, attack.meta_adjustment: { type: choice, options: [{ }, { training: { optimizer: sgd, lr: 1.0, yield_best: False, patience: null } }] } } }
+  pgd_meta:
+    fixed: { attack.method: pgd_meta_edges, attack.base_lr: 0.3, attack.grad_clip: 0.1 }
+    # Get the init run IDs using:
+    # db.getCollection('evasion').find({"config.model.arch":"pro_gnn","config.training.reg_adj_nuclear":{"$gte":10},"config.attack.scope":"global","config.attack.method":"pgd_meta_edges","config.attack.loss.aggregation":"XXX"})
+    init_tanh_score_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+    init_proba_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }

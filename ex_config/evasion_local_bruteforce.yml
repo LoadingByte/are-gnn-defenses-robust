@@ -1,0 +1,218 @@
+seml:
+  project_root_dir: ..
+  executable: ex_evasion.py
+  output_dir: ../ex-output
+
+slurm:
+  # As brute force dynamically adjusts batch size based on out of memory errors, multiple experiments on the same GPU
+  # neither make sense (since one experiment can max out GPU memory) nor would they be stable (as multiple experiments
+  # would interfere with each other's batch size determination routine).
+  experiments_per_job: 1
+  sbatch_options:
+    partition: gpu_large
+    gres: gpu:1
+    mem: 64G
+    # Some processing on the CPU might be parallelizable, e.g., sparse SVD computation.
+    cpus-per-task: 8
+    time: 3-00:00
+
+
+fixed:
+  attack.scope: local
+  attack.budgets: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  attack.method: brute_force_edges
+  attack.loss.aggregation: score_margin
+  attack.early_stop_loss: -5.0
+  attack.edge_set_size: 1
+  attack.edge_diff_masks.e1: { type: receptive_field, steps: 2 }
+grid:
+  dataset: { type: choice, options: [citeseer, cora] }
+  attack.targets: { type: choice, options: [degree_1, degree_2, degree_3, degree_5, degree_8_to_10, degree_15_to_25] }
+
+
+gcn_1:
+  fixed:
+    model.arch: gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+
+
+gcn_2:
+  fixed:
+    model.arch: gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+
+jaccard_gcn_faith:
+  fixed:
+    model.arch: jaccard_gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    model.threshold: 0.0
+    training.patience: 200
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+    attack.edge_diff_masks.e2: { type: jaccard, binarize: 0.0 }
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+
+jaccard_gcn_tuned:
+  fixed:
+    model.arch: jaccard_gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    model.threshold: 0.0
+    training.lr: 0.01
+    training.weight_decay: 0.001
+    attack.edge_diff_masks.e2: { type: jaccard, binarize: 0.0 }
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+
+svd_gcn_faith:
+  fixed:
+    model.arch: svd_gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.patience: 200
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+
+  rank_10:
+    fixed:
+      model.rank: 10
+      attack.edge_diff_masks.e2: { type: eigenspace_alignment, symmetrize: survivor_avg, rank: 10, cutoff: 0.1 }
+  rank_50:
+    fixed:
+      model.rank: 50
+      attack.edge_diff_masks.e2: { type: eigenspace_alignment, symmetrize: survivor_avg, rank: 50, cutoff: 0.2 }
+
+
+svd_gcn_tuned:
+  fixed:
+    model.arch: svd_gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+  rank_10:
+    fixed:
+      model.rank: 10
+      attack.edge_diff_masks.e2: { type: eigenspace_alignment, symmetrize: survivor_avg, rank: 10, cutoff: 0.1 }
+  rank_50:
+    fixed:
+      model.rank: 50
+      attack.edge_diff_masks.e2: { type: eigenspace_alignment, symmetrize: survivor_avg, rank: 50, cutoff: 0.2 }
+
+
+rgcn_faith:
+  fixed:
+    model.arch: rgcn
+    model.hidden_dims: [16]
+    model.dropout: 0.6
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+
+
+rgcn_tuned:
+  fixed:
+    model.arch: rgcn
+    model.hidden_dims: [32]
+    model.dropout: 0.6
+    training.lr: 0.01
+    training.weight_decay: 0.01
+
+
+pro_gnn:
+  fixed:
+    model.arch: pro_gnn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.gnn_lr: 0.01
+    training.gnn_weight_decay: 0.0005
+    training.adj_lr: 0.01
+    training.adj_momentum: 0.9
+    training.reg_adj_deviate: 1.0
+    attack.loss.use_learned_adj: False
+
+  faith_citeseer:
+    fixed:
+      dataset: citeseer
+      training.reg_adj_l1: 0.0005
+      training.reg_adj_nuclear: 1.5
+      training.reg_feat_smooth: 0.0001
+  faith_cora:
+    fixed:
+      dataset: cora
+      training.reg_adj_l1: 0.0005
+      training.reg_adj_nuclear: 1.5
+      training.reg_feat_smooth: 0.001
+  tuned_citeseer:
+    fixed:
+      dataset: citeseer
+      training.reg_adj_l1: 0.2
+      training.reg_adj_nuclear: 20.0
+      training.reg_feat_smooth: 0.2
+  tuned_cora:
+    fixed:
+      dataset: cora
+      training.reg_adj_l1: 0.1
+      training.reg_adj_nuclear: 10.0
+      training.reg_feat_smooth: 0.1
+
+
+gnn_guard_faith:
+  fixed:
+    model.arch: gnn_guard
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.max_epochs: 81
+    training.patience: null
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+    model.mimic_ref_impl: { type: choice, options: [false, true] }
+
+
+grand_tuned_cora:
+  fixed:
+    dataset: cora
+    model.arch: grand
+    model.hidden_dims: [32]
+    model.dropout: 0.5
+    model.dropnode: 0.5
+    model.order: 8
+    model.mlp_input_dropout: 0.5
+    training.lr: 0.05
+    training.weight_decay: 0.0001
+    training.n_samples: 4
+    training.reg_consistency: 1.0
+    training.sharpening_temperature: 0.5
+
+
+grand_tuned_citeseer:
+  fixed:
+    dataset: citeseer
+    model.arch: grand
+    model.hidden_dims: [32]
+    model.dropout: 0.2
+    model.dropnode: 0.5
+    model.order: 2
+    model.mlp_input_dropout: 0.0
+    training.lr: 0.05
+    training.weight_decay: 0.0005
+    training.n_samples: 2
+    training.reg_consistency: 0.7
+    training.sharpening_temperature: 0.3

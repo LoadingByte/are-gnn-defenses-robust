@@ -1,0 +1,37 @@
+seml:
+  project_root_dir: ..
+  executable: ex_trans_poisoning.py
+  output_dir: ../ex-output
+
+slurm:
+  experiments_per_job: 4
+  sbatch_options:
+    gres: gpu:1
+    mem: 32G
+    cpus-per-task: 5
+    time: 3-00:00
+
+
+# Make SEML happy.
+fixed:
+  evasion_run_id: 0
+
+
+use_new_seeds:
+  grid:
+    evasion_run_id:
+      type: choice
+      # Get this using:
+      # db.getCollection('evasion').find({}, {"_id":1}).map(ex => ex._id)
+      options: [TODO]
+
+
+use_evasion_seeds:
+  fixed:
+    use_evasion_seeds: true
+  grid:
+    evasion_run_id:
+      type: choice
+      # Get this using:
+      # db.getCollection('evasion').find({"config.model.arch":{"$in":["gcn","pro_gnn"]},"config.attack.scope":"global","config.attack.method":{"$not":{"$in":["greedy_meta_edges","pgd_meta_edges"]}},"config.attack.num_auxiliaries":{"$in":[null,1]}}, {"_id":1}).map(ex => ex._id)
+      options: [TODO]

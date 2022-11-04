@@ -1,0 +1,415 @@
+seml:
+  project_root_dir: ..
+  executable: ex_evasion.py
+  output_dir: ../ex-output
+
+slurm:
+  experiments_per_job: 4
+  sbatch_options:
+    gres: gpu:1
+    mem: 32G
+    cpus-per-task: 5
+    time: 1-00:00
+
+
+fixed:
+  attack.scope: local
+grid:
+  dataset: { type: choice, options: [citeseer, cora] }
+  attack.targets: { type: choice, options: [degree_1, degree_2, degree_3, degree_5, degree_8_to_10, degree_15_to_25] }
+
+
+gcn_1:
+  fixed:
+    model.arch: gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+
+  gd:
+    grid:
+      attack.method: { type: choice, options: [fga_edges, pgd_edges] }
+  nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+  nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+
+
+gcn_2:
+  fixed:
+    model.arch: gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+  gd:
+    grid:
+      attack.method: { type: choice, options: [fga_edges, pgd_edges] }
+  nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+  nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+
+
+jaccard_gcn_faith:
+  fixed:
+    model.arch: jaccard_gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    model.threshold: 0.0
+    training.patience: 200
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+  maybe_drop_jac:
+    grid:
+      attack.loss.drop_layers: { type: choice, options: [[], [jaccard]] }
+      attack.method: { type: choice, options: [fga_edges, pgd_edges] }
+  nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+  nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+  with_mask:
+    fixed:
+      attack.edge_diff_masks.e1: { type: jaccard, binarize: 0.0 }
+    nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+
+
+jaccard_gcn_tuned:
+  fixed:
+    model.arch: jaccard_gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    model.threshold: 0.0
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+  maybe_drop_jac:
+    grid:
+      attack.loss.drop_layers: { type: choice, options: [[], [jaccard]] }
+      attack.method: { type: choice, options: [fga_edges, pgd_edges] }
+  nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+  nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+  with_mask:
+    fixed:
+      attack.edge_diff_masks.e1: { type: jaccard, binarize: 0.0 }
+    nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+
+
+svd_gcn_faith:
+  fixed:
+    model.arch: svd_gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.patience: 200
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+
+  gd:
+    grid:
+      attack.method: { type: choice, options: [fga_edges, pgd_edges] }
+    drop:
+      fixed:
+        attack.loss.drop_layers: [low_rank]
+      without_mask: { grid: { model.rank: { type: choice, options: [10, 50] } } }
+      rank_10_with_mask: { fixed: { model.rank: 10, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 10 } } }
+      rank_50_with_mask: { fixed: { model.rank: 50, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 50 } } }
+    freeze:
+      fixed:
+        attack.loss.freeze_layers: [low_rank]
+      without_mask: { grid: { model.rank: { type: choice, options: [10, 50] } } }
+      rank_10_with_mask: { fixed: { model.rank: 10, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 10 } } }
+      rank_50_with_mask: { fixed: { model.rank: 50, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 50 } } }
+  nettack_without_mask:
+    grid:
+      model.rank: { type: choice, options: [10, 50] }
+    nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+  nettack_with_mask_rank_10:
+    fixed:
+      model.rank: 10
+      attack.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 10 }
+    nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+  nettack_with_mask_rank_50:
+    fixed:
+      model.rank: 50
+      attack.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 50 }
+    nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+
+
+svd_gcn_tuned:
+  fixed:
+    model.arch: svd_gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+  gd:
+    grid:
+      attack.method: { type: choice, options: [fga_edges, pgd_edges] }
+    drop:
+      fixed:
+        attack.loss.drop_layers: [low_rank]
+      without_mask: { grid: { model.rank: { type: choice, options: [10, 50] } } }
+      rank_10_with_mask: { fixed: { model.rank: 10, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 10 } } }
+      rank_50_with_mask: { fixed: { model.rank: 50, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 50 } } }
+    freeze:
+      fixed:
+        attack.loss.freeze_layers: [low_rank]
+      without_mask: { grid: { model.rank: { type: choice, options: [10, 50] } } }
+      rank_10_with_mask: { fixed: { model.rank: 10, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 10 } } }
+      rank_50_with_mask: { fixed: { model.rank: 50, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 50 } } }
+  nettack_without_mask:
+    grid:
+      model.rank: { type: choice, options: [10, 50] }
+    nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+  nettack_with_mask_rank_10:
+    fixed:
+      model.rank: 10
+      attack.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 10 }
+    nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+  nettack_with_mask_rank_50:
+    fixed:
+      model.rank: 50
+      attack.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 50 }
+    nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+
+
+rgcn_faith:
+  fixed:
+    model.arch: rgcn
+    model.hidden_dims: [16]
+    model.dropout: 0.6
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+  grid:
+    attack.method: { type: choice, options: [nettack_edges, fga_edges, pgd_edges] }
+
+
+rgcn_tuned:
+  fixed:
+    model.arch: rgcn
+    model.hidden_dims: [32]
+    model.dropout: 0.6
+    training.lr: 0.01
+    training.weight_decay: 0.01
+  grid:
+    attack.method: { type: choice, options: [nettack_edges, fga_edges, pgd_edges] }
+
+
+pro_gnn_regular_attack:
+  fixed:
+    model.arch: pro_gnn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.gnn_lr: 0.01
+    training.gnn_weight_decay: 0.0005
+    training.adj_lr: 0.01
+    training.adj_momentum: 0.9
+    training.reg_adj_deviate: 1.0
+
+  faith_citeseer:
+    fixed:
+      dataset: citeseer
+      training.reg_adj_l1: 0.0005
+      training.reg_adj_nuclear: 1.5
+      training.reg_feat_smooth: 0.0001
+    simple: { grid: { attack.method: { type: choice, options: [fga_edges, pgd_edges, nettack_edges] } } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+  faith_cora:
+    fixed:
+      dataset: cora
+      training.reg_adj_l1: 0.0005
+      training.reg_adj_nuclear: 1.5
+      training.reg_feat_smooth: 0.001
+    simple: { grid: { attack.method: { type: choice, options: [fga_edges, pgd_edges, nettack_edges] } } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+  tuned_citeseer:
+    fixed:
+      dataset: citeseer
+      training.reg_adj_l1: 0.2
+      training.reg_adj_nuclear: 20.0
+      training.reg_feat_smooth: 0.2
+    simple: { grid: { attack.method: { type: choice, options: [fga_edges, pgd_edges, nettack_edges] } } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+  tuned_cora:
+    fixed:
+      dataset: cora
+      training.reg_adj_l1: 0.1
+      training.reg_adj_nuclear: 10.0
+      training.reg_feat_smooth: 0.1
+    simple: { grid: { attack.method: { type: choice, options: [fga_edges, pgd_edges, nettack_edges] } } }
+    nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+
+
+gnn_guard_faith:
+  fixed:
+    model.arch: gnn_guard
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.max_epochs: 81
+    training.patience: null
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+  no_pruning:
+    fixed:
+      model.prune_edges: false
+    nettack:
+      grid:
+        model.mimic_ref_impl: { type: choice, options: [false, true] }
+      nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+      nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+    gd:
+      fixed:
+        attack.loss.model_alteration.div_limit: 0.01
+      fga:
+        fixed:
+          attack.method: fga_edges
+        grid:
+          model.mimic_ref_impl: { type: choice, options: [false, true] }
+      pgd_edges_paper:
+        fixed:
+          model.mimic_ref_impl: false
+          attack.method: pgd_edges
+          attack.grad_clip: 1
+      pgd_edges_refimpl:
+        fixed:
+          model.mimic_ref_impl: true
+          attack.method: pgd_edges
+          attack.base_lr: 0.3
+          attack.grad_clip: 1
+  pruning:
+    grid:
+      model.mimic_ref_impl: { type: choice, options: [false, true] }
+    fixed:
+      model.prune_edges: true
+      training.repetitions: 10
+      attack.method: nettack_edges
+
+
+grand_tuned_cora:
+  fixed:
+    dataset: cora
+    model.arch: grand
+    model.hidden_dims: [32]
+    model.dropout: 0.5
+    model.dropnode: 0.5
+    model.order: 8
+    model.mlp_input_dropout: 0.5
+    training.lr: 0.05
+    training.weight_decay: 0.0001
+    training.n_samples: 4
+    training.reg_consistency: 1.0
+    training.sharpening_temperature: 0.5
+  grid:
+    attack.method: { type: choice, options: [nettack_edges, fga_edges, pgd_edges] }
+
+
+grand_tuned_citeseer:
+  fixed:
+    dataset: citeseer
+    model.arch: grand
+    model.hidden_dims: [32]
+    model.dropout: 0.2
+    model.dropnode: 0.5
+    model.order: 2
+    model.mlp_input_dropout: 0.0
+    training.lr: 0.05
+    training.weight_decay: 0.0005
+    training.n_samples: 2
+    training.reg_consistency: 0.7
+    training.sharpening_temperature: 0.3
+  grid:
+    attack.method: { type: choice, options: [nettack_edges, fga_edges, pgd_edges] }
+
+
+soft_median_gdc_faith_tuned_citeseer:
+  fixed:
+    dataset: citeseer
+    model.arch: soft_median_gdc
+    model.hidden_dims: [64]
+    model.dropout: 0.5
+    model.neighbors: 64
+    model.temperature: 0.5
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    model.teleport_proba: { type: choice, options: [0.15, 0.25] }  # faith & tuned
+
+  gd:
+    fixed:
+      attack.loss.model_alteration.only_weight_neighbors: false
+    fga:
+      fixed:
+        attack.method: fga_edges
+    pgd:
+      fixed:
+        attack.method: pgd_edges
+        attack.base_lr: 0.5
+    pgd_init:
+      fixed:
+        attack.method: pgd_edges
+        attack.base_lr: 0.5
+      # Get this using:
+      # db.getCollection('evasion').find({"config.model.arch":"gcn","config.model.hidden_dims":[64],"config.attack.scope":"local","config.attack.method":"pgd_edges"}).map(ex => `init_${ex.config.dataset}_${ex.config.attack.targets}: { fixed: { dataset: ${ex.config.dataset}, attack.targets: ${ex.config.attack.targets}, attack.init_from_run_id: ${ex._id} } }`)
+      init_citeseer_degree_1: { fixed: { dataset: citeseer, attack.targets: degree_1, attack.init_from_run_id: TODO } }
+      init_citeseer_degree_2: { fixed: { dataset: citeseer, attack.targets: degree_2, attack.init_from_run_id: TODO } }
+      init_citeseer_degree_3: { fixed: { dataset: citeseer, attack.targets: degree_3, attack.init_from_run_id: TODO } }
+      init_citeseer_degree_5: { fixed: { dataset: citeseer, attack.targets: degree_5, attack.init_from_run_id: TODO } }
+      init_citeseer_degree_8_to_10: { fixed: { dataset: citeseer, attack.targets: degree_8_to_10, attack.init_from_run_id: TODO } }
+      init_citeseer_degree_15_to_25: { fixed: { dataset: citeseer, attack.targets: degree_15_to_25, attack.init_from_run_id: TODO } }
+  nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+  nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }
+
+
+soft_median_gdc_faith_cora:
+  fixed:
+    dataset: cora
+    model.arch: soft_median_gdc
+    model.hidden_dims: [64]
+    model.dropout: 0.5
+    model.neighbors: 64
+    model.teleport_proba: 0.15
+    model.temperature: 0.5
+    training.lr: 0.01
+    training.weight_decay: 0.001
+
+  gd:
+    fixed:
+      attack.loss.model_alteration.only_weight_neighbors: false
+    fga:
+      fixed:
+        attack.method: fga_edges
+    pgd:
+      fixed:
+        attack.method: pgd_edges
+        attack.base_lr: 0.5
+    pgd_init:
+      fixed:
+        attack.method: pgd_edges
+        attack.base_lr: 0.5
+      # Get this using:
+      # db.getCollection('evasion').find({"config.model.arch":"gcn","config.model.hidden_dims":[64],"config.attack.scope":"local","config.attack.method":"pgd_edges"}).map(ex => `init_${ex.config.attack.targets}: { fixed: { attack.targets: ${ex.config.attack.targets}, attack.init_from_run_id: ${ex._id} } }`)
+      init_degree_1: { fixed: { attack.targets: degree_1, attack.init_from_run_id: TODO } }
+      init_degree_2: { fixed: { attack.targets: degree_2, attack.init_from_run_id: TODO } }
+      init_degree_3: { fixed: { attack.targets: degree_3, attack.init_from_run_id: TODO } }
+      init_degree_5: { fixed: { attack.targets: degree_5, attack.init_from_run_id: TODO } }
+      init_degree_8_to_10: { fixed: { attack.targets: degree_8_to_10, attack.init_from_run_id: TODO } }
+      init_degree_15_to_25: { fixed: { attack.targets: degree_15_to_25, attack.init_from_run_id: TODO } }
+  nettack_surrogate: { fixed: { attack.method: nettack_edges } }
+  nettack_no_surrogate: { fixed: { attack.method: nettack_edges, attack.surrogate: null } }

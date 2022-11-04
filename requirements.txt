@@ -1,0 +1,16 @@
+joblib==1.1.0
+jupyter==1.0.0
+matplotlib==3.4.3
+networkx==2.6.3
+ninja==1.10.2.3
+numba==0.54.1
+numpy==1.20.3
+pandas==1.3.4
+pymongo==4.0.1
+sacred==0.8.2
+scikit-learn==1.0
+scipy==1.7.1
+seml==0.3.6
+torchtyping==0.1.4
+tqdm==4.62.3
+typeguard==2.13.0

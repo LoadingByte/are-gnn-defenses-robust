@@ -1,0 +1,6 @@
+*.pdf
+
+.idea/
+__pycache__/
+__cudacache__/
+.ipynb_checkpoints/

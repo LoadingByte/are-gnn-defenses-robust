@@ -1,0 +1,288 @@
+seml:
+  project_root_dir: ..
+  executable: ex_evasion.py
+  output_dir: ../ex-output
+
+slurm:
+  experiments_per_job: 2
+  sbatch_options:
+    gres: gpu:1
+    mem: 32G
+    cpus-per-task: 4
+    time: 0-02:00
+
+
+fixed:
+  attack.scope: global
+grid:
+  dataset: { type: choice, options: [citeseer, cora] }
+  attack.method: { type: choice, options: [fga_edges, pgd_edges] }
+  attack.loss.aggregation: { type: choice, options: [cross_entropy, masked_cross_entropy, score_margin, relu_score_margin, elu_score_margin, tanh_score_margin, proba_margin, relu_proba_margin] }
+
+
+gcn_1:
+  fixed:
+    model.arch: gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+
+
+gcn_2:
+  fixed:
+    model.arch: gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+
+jaccard_gcn_faith:
+  fixed:
+    model.arch: jaccard_gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    model.threshold: 0.0
+    training.lr: 0.01
+    training.patience: 200
+    training.weight_decay: 0.0005
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+    attack.loss.drop_layers: { type: choice, options: [[], [jaccard]] }
+
+
+jaccard_gcn_tuned:
+  fixed:
+    model.arch: jaccard_gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    model.threshold: 0.0
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+    attack.loss.drop_layers: { type: choice, options: [[], [jaccard]] }
+
+
+svd_gcn_faith:
+  fixed:
+    model.arch: svd_gcn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.patience: 200
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+
+  drop:
+    fixed:
+      attack.loss.drop_layers: [low_rank]
+    without_mask: { grid: { model.rank: { type: choice, options: [10, 50] } } }
+    rank_10_with_mask: { fixed: { model.rank: 10, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 10 } } }
+    rank_50_with_mask: { fixed: { model.rank: 50, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 50 } } }
+  freeze:
+    fixed:
+      attack.loss.freeze_layers: [low_rank]
+    without_mask: { grid: { model.rank: { type: choice, options: [10, 50] } } }
+    rank_10_with_mask: { fixed: { model.rank: 10, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 10 } } }
+    rank_50_with_mask: { fixed: { model.rank: 50, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 50 } } }
+
+
+svd_gcn_tuned:
+  fixed:
+    model.arch: svd_gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    training.lr: 0.01
+    training.weight_decay: 0.001
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+
+  drop:
+    fixed:
+      attack.loss.drop_layers: [low_rank]
+    without_mask: { grid: { model.rank: { type: choice, options: [10, 50] } } }
+    rank_10_with_mask: { fixed: { model.rank: 10, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 10 } } }
+    rank_50_with_mask: { fixed: { model.rank: 50, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 50 } } }
+  freeze:
+    fixed:
+      attack.loss.freeze_layers: [low_rank]
+    without_mask: { grid: { model.rank: { type: choice, options: [10, 50] } } }
+    rank_10_with_mask: { fixed: { model.rank: 10, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 10 } } }
+    rank_50_with_mask: { fixed: { model.rank: 50, attack.loss.edge_diff_masks.e1: { type: eigenspace_alignment, symmetrize: avg, rank: 50 } } }
+
+
+rgcn_faith:
+  fixed:
+    model.arch: rgcn
+    model.hidden_dims: [16]
+    model.dropout: 0.6
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+
+
+rgcn_tuned:
+  fixed:
+    model.arch: rgcn
+    model.hidden_dims: [32]
+    model.dropout: 0.6
+    training.lr: 0.01
+    training.weight_decay: 0.01
+
+
+pro_gnn_regular_attack:
+  fixed:
+    model.arch: pro_gnn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.gnn_lr: 0.01
+    training.gnn_weight_decay: 0.0005
+    training.adj_lr: 0.01
+    training.adj_momentum: 0.9
+    training.reg_adj_deviate: 1.0
+  grid:
+    attack.loss.aggregation: { type: choice, options: [masked_cross_entropy, tanh_score_margin, proba_margin] }
+
+  faith_citeseer:
+    fixed:
+      dataset: citeseer
+      training.reg_adj_l1: 0.0005
+      training.reg_adj_nuclear: 1.5
+      training.reg_feat_smooth: 0.0001
+  faith_cora:
+    fixed:
+      dataset: cora
+      training.reg_adj_l1: 0.0005
+      training.reg_adj_nuclear: 1.5
+      training.reg_feat_smooth: 0.001
+  tuned_citeseer:
+    fixed:
+      dataset: citeseer
+      training.reg_adj_l1: 0.2
+      training.reg_adj_nuclear: 20.0
+      training.reg_feat_smooth: 0.2
+  tuned_cora:
+    fixed:
+      dataset: cora
+      training.reg_adj_l1: 0.1
+      training.reg_adj_nuclear: 10.0
+      training.reg_feat_smooth: 0.1
+
+
+gnn_guard_faith:
+  fixed:
+    model.arch: gnn_guard
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    model.prune_edges: false
+    training.max_epochs: 81
+    training.patience: null
+    training.lr: 0.01
+    training.weight_decay: 0.0005
+    attack.loss.model_alteration.div_limit: 0.01
+  grid:
+    dataset: { type: choice, options: [citeseer, cora] }
+    model.mimic_ref_impl: { type: choice, options: [false, true] }
+
+  fga:
+    fixed:
+      attack.method: fga_edges
+  pgd:
+    fixed:
+      attack.method: pgd_edges
+      attack.base_lr: 0.3
+
+
+grand_tuned_citeseer:
+  fixed:
+    dataset: citeseer
+    model.arch: grand
+    model.hidden_dims: [32]
+    model.dropout: 0.2
+    model.dropnode: 0.5
+    model.order: 2
+    model.mlp_input_dropout: 0.0
+    training.lr: 0.05
+    training.weight_decay: 0.0005
+    training.n_samples: 2
+    training.reg_consistency: 0.7
+    training.sharpening_temperature: 0.3
+
+
+grand_tuned_cora:
+  fixed:
+    dataset: cora
+    model.arch: grand
+    model.hidden_dims: [32]
+    model.dropout: 0.5
+    model.dropnode: 0.5
+    model.order: 8
+    model.mlp_input_dropout: 0.5
+    training.lr: 0.05
+    training.weight_decay: 0.0001
+    training.n_samples: 4
+    training.reg_consistency: 1.0
+    training.sharpening_temperature: 0.5
+
+
+soft_median_gdc_faith_tuned_citeseer:
+  fixed:
+    dataset: citeseer
+    model.arch: soft_median_gdc
+    model.hidden_dims: [64]
+    model.dropout: 0.5
+    model.neighbors: 64
+    model.temperature: 0.5
+    training.lr: 0.01
+    training.weight_decay: 0.001
+    attack.loss.model_alteration.only_weight_neighbors: false
+  grid:
+    model.teleport_proba: { type: choice, options: [0.15, 0.25] }  # faith & tuned
+
+  fga:
+    fixed:
+      attack.method: fga_edges
+  pgd:
+    fixed:
+      attack.method: pgd_edges
+      attack.base_lr: 0.5
+  pgd_init:
+    fixed:
+      attack.method: pgd_edges
+      attack.base_lr: 0.5
+    # Get the init run IDs using:
+    # db.getCollection('evasion').find({"config.model.arch":"gcn","config.model.hidden_dims":[64],"config.attack.scope":"global","config.attack.method":"pgd_edges","config.dataset":"XXX","config.attack.loss.aggregation":"XXX"})
+    init_citeseer_tanh_score_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+    init_citeseer_proba_margin: { fixed: { attack.loss.aggregation: proba_margin, attack.init_from_run_id: TODO } }
+
+
+soft_median_gdc_faith_cora:
+  fixed:
+    dataset: cora
+    model.arch: soft_median_gdc
+    model.hidden_dims: [64]
+    model.dropout: 0.5
+    model.neighbors: 64
+    model.teleport_proba: 0.15
+    model.temperature: 0.5
+    training.lr: 0.01
+    training.weight_decay: 0.001
+    attack.loss.model_alteration.only_weight_neighbors: false
+
+  fga:
+    fixed:
+      attack.method: fga_edges
+  pgd:
+    fixed:
+      attack.method: pgd_edges
+      attack.base_lr: 0.5
+  pgd_init:
+    fixed:
+      attack.method: pgd_edges
+      attack.base_lr: 0.5
+    # Get the init run IDs using:
+    # db.getCollection('evasion').find({"config.model.arch":"gcn","config.model.hidden_dims":[64],"config.attack.scope":"global","config.attack.method":"pgd_edges","config.attack.loss.aggregation":"XXX"})
+    init_tanh_score_margin: { fixed: { attack.loss.aggregation: tanh_score_margin, attack.init_from_run_id: TODO } }
+    init_proba_margin: { fixed: { attack.loss.aggregation: proba_margin, attack.init_from_run_id: TODO } }

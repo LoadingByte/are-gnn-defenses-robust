@@ -1,0 +1,61 @@
+seml:
+  project_root_dir: ..
+  executable: ex_evasion.py
+  output_dir: ../ex-output
+
+slurm:
+  experiments_per_job: 2
+  sbatch_options:
+    partition: gpu_large
+    gres: gpu:1
+    mem: 64G
+    cpus-per-task: 4
+    time: 1-00:00
+
+
+fixed:
+  attack.scope: local
+grid:
+  dataset: { type: choice, options: [citeseer, cora] }
+  attack.targets: { type: choice, options: [degree_1, degree_2, degree_3, degree_5, degree_8_to_10, degree_15_to_25] }
+
+
+pro_gnn_multi_pgd_attack:
+  fixed:
+    model.arch: pro_gnn
+    model.hidden_dims: [16]
+    model.dropout: 0.5
+    training.gnn_lr: 0.01
+    training.gnn_weight_decay: 0.0005
+    training.adj_lr: 0.01
+    training.adj_momentum: 0.9
+    training.reg_adj_deviate: 1.0
+    attack.method: pgd_edges
+    attack.num_auxiliaries: 10
+    attack.auxiliary_adjustment.training.reg_adj_nuclear: 0.0
+    attack.repetitions: 10
+
+  faith_citeseer:
+    fixed:
+      dataset: citeseer
+      training.reg_adj_l1: 0.0005
+      training.reg_adj_nuclear: 1.5
+      training.reg_feat_smooth: 0.0001
+  faith_cora:
+    fixed:
+      dataset: cora
+      training.reg_adj_l1: 0.0005
+      training.reg_adj_nuclear: 1.5
+      training.reg_feat_smooth: 0.001
+  tuned_citeseer:
+    fixed:
+      dataset: citeseer
+      training.reg_adj_l1: 0.2
+      training.reg_adj_nuclear: 20.0
+      training.reg_feat_smooth: 0.2
+  tuned_cora:
+    fixed:
+      dataset: cora
+      training.reg_adj_l1: 0.1
+      training.reg_adj_nuclear: 10.0
+      training.reg_feat_smooth: 0.1

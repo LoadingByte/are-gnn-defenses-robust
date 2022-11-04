@@ -1,0 +1,53 @@
+seml:
+  project_root_dir: ..
+  executable: ex_evasion.py
+  output_dir: ../ex-output
+
+slurm:
+  experiments_per_job: 5
+  sbatch_options:
+    gres: gpu:1
+    mem: 32G
+    cpus-per-task: 6
+    time: 10-00:00
+
+
+fixed:
+  attack.scope: local
+grid:
+  dataset: { type: choice, options: [citeseer, cora] }
+
+
+gcn_2:
+  fixed:
+    model.arch: gcn
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    training.lr: 0.01
+    training.weight_decay: 0.001
+
+  nettack_surrogate:
+    fixed: { attack.method: nettack_feats }
+    degree_1_2_3: { fixed: { attack.budgets: [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60] }, grid: { attack.targets: { type: choice, options: [degree_1, degree_2, degree_3] } } }
+    degree_5: { fixed: { attack.budgets: [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100], attack.targets: degree_5 } }
+    degree_8_to_10: { fixed: { attack.budgets: [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200], attack.targets: degree_8_to_10 } }
+    degree_15_to_25: { fixed: { attack.budgets: [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460, 480, 500], attack.targets: degree_15_to_25 } }
+
+
+svd_gcn_feat_tuned:
+  fixed:
+    model.arch: svd_gcn_feats
+    model.hidden_dims: [64]
+    model.dropout: 0.9
+    training.lr: 0.01
+    training.weight_decay: 0.001
+
+  nettack_without_mask:
+    grid:
+      model.rank: { type: choice, options: [10, 50] }
+    nettack_surrogate:
+      fixed: { attack.method: nettack_feats }
+      degree_1_2_3: { fixed: { attack.budgets: [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60] }, grid: { attack.targets: { type: choice, options: [degree_1, degree_2, degree_3] } } }
+      degree_5: { fixed: { attack.budgets: [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100], attack.targets: degree_5 } }
+      degree_8_to_10: { fixed: { attack.budgets: [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200], attack.targets: degree_8_to_10 } }
+      degree_15_to_25: { fixed: { attack.budgets: [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460, 480, 500], attack.targets: degree_15_to_25 } }
