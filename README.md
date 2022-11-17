@@ -4,6 +4,10 @@ This is the Python 3.9 code we have used to study the adversarial robustness of
 various GNN defenses in our NeurIPS 2022 paper "Are Defenses for Graph Neural
 Networks Robust?".
 
+[Project Page](https://www.cs.cit.tum.de/daml/are-gnn-defenses-robust/) •
+[Paper (OpenReview)](https://openreview.net/pdf?id=yCJVkELVT9d) •
+[Video (YouTube)](https://www.youtube.com/watch?v=W6gxCf07vz4)
+
 A cursory reading of the literature suggests that we have made a lot of progress
 in designing effective adversarial defenses for Graph Neural Networks (GNNs).
 Yet, the standard methodology has a serious flaw – virtually all of the defenses
@@ -19,10 +23,23 @@ test offering a first glance at a model's robustness.
 
 ![Efficacy of adaptive over non-adaptive attacks](superstar.png)
 
-- To introduce yourself to the various parts of the code, take a look at the
-  demo notebook in [`notebooks/demo.ipynb`](notebooks/demo.ipynb).
-- If you are looking for the black-box robustness unit test, you can find a
-  self-explanatory demo script in [`unit_test/sketch.py`](unit_test/sketch.py).
+Please cite our paper if you refer to our results or use the method or code in
+your own work:
+
+    @inproceedings{mujkanovic2022_are_defenses_for_gnns_robust,
+        title = {Are Defenses for Graph Neural Networks Robust?},
+        author = {Mujkanovic, Felix and Geisler, Simon and G\"unnemann, Stephan and Bojchevski, Aleksandar},
+        booktitle = {Neural Information Processing Systems, {NeurIPS}},
+        year = {2022}
+    }
+
+## Quick Start
+
+To introduce yourself to the various parts of the code, take a look at the demo
+notebook in [`notebooks/demo.ipynb`](notebooks/demo.ipynb).
+
+If you are looking for the black-box robustness unit test, you can find a
+self-explanatory demo script in [`unit_test/sketch.py`](unit_test/sketch.py).
 
 ## Setup
 
